@@ -178,7 +178,11 @@ describe("User avatar information", async () => {
         imageUrl: "",
         name: "Sam",
       }
-    );
+    ,{
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    });
 
     avatarId = avatarResponse.data.avatarId;
   });
@@ -591,19 +595,296 @@ describe("Arena endpoints", async () => {
   });
 
   test("Incorrect spaceId retures 400",async()=>{
-    const response=await axios.post(`${BACKEND_URL}/api/v1/space/1321w`);
+    const response=await axios.get(`${BACKEND_URL}/api/v1/space/1321w`,{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    });
     expect(response.statusCode).toBe(400);
   });
   test("Correct spaceId retures all the elements",async()=>{
-    const response=await axios.post(`${BACKEND_URL}/api/v1/space/${spaceId}`);
+    const response=await axios.get(`${BACKEND_URL}/api/v1/space/${spaceId}`,{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    });
     expect(response.data.elemets.length).toBe(3);   // beacuse we create three elements above only 
     expect(response.data.dimensions).toBe("100x200")
   });
   test("Delete endpoint is able to delete an element ",async()=>{
-    const response=await axios.post(`${BACKEND_URL}/api/v1/space/${spaceId}`);
-    expect(response.data.elemets.length).toBe(3);   // beacuse we create three elements above only 
-    expect(response.data.dimensions).toBe("100x200")
+
+    const response=await axios.get(`${BACKEND_URL}/api/v1/space/${spaceId}`,{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    });
+
+
+    await axios.post(`${BACKEND_URL}/api/v1/space/element`,{
+      spaceId,
+      elementId:response.data.elemets[0].id
+    },{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    });
+
+    const newResponse=await axios.get(`${BACKEND_URL}/api/v1/space/${spaceId}`,{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    })
+    expect(newResponse.data.elemets.length).toBe(2);   // beacuse after deletion 2 elem left  only 
+  });
+
+  test("Adding an element fails if the elemnt  lies outside the dimesnions ",async()=>{
+
+
+
+    await axios.post(`${BACKEND_URL}/api/v1/space/element`,{
+      "elementId": element1Id,
+      "spaceId": spaceId,
+      "x": 5000000,
+      "y": 200000
+    },{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    });
+
+    expect(newResponse.statusCode).toBe(400); 
+  });
+
+  test("Adding an element works as expected ",async()=>{
+
+
+
+    await axios.post(`${BACKEND_URL}/api/v1/space/element`,{
+      "elementId": element1Id,
+      "spaceId": spaceId,
+      "x": 50,
+      "y": 20
+    },{
+      headers:{
+        Authorization:`Bearer ${userToken}`
+      }
+    });
+
+    const newResponse=await axios.get(`${BACKEND_URL}/api/v1/space/${spaceId}`)
+    expect(newResponse.data.elemets.length).toBe(3);   // beacuse after deletion 2 elem left  only 
   });
 
 
 });
+
+describe("Admin Endpoints",async()=>{
+
+  let userId;
+  let userToken;
+  let adminId;
+  let adminToken;
+
+  beforeAll(async () => {
+    const username = `Sam${Math.random()}`;
+    const password = "1234";
+
+    const signupResponse = await axios.post(
+      `${BACKEND_URL}/api/v1/user/signUp`,
+      {
+        username,
+        password,
+        type: "admin",
+      }
+    );
+
+    adminId = signupResponse.data.userId;
+
+    const response = await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
+      username,
+      password,
+    });
+
+    adminToken = response.data.token;
+
+    const userSignupResponse = await axios.post(
+      `${BACKEND_URL}/api/v1/user/signUp`,
+      {
+        username: username + "-user",
+        password,
+        type: "user",
+      }
+    );
+
+    userId = userSignupResponse.data.userId;
+
+    const userResponse = await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
+      username: username + "-user",
+      password,
+    });
+
+    userToken = userResponse.data.token;
+
+   
+  });
+
+  test("user is not able to hi tthe admin endponits ",async()=>{
+    const elementResponse = await axios.post(
+      `${BACKEND_URL} /api/v1/admin/element`,
+      {
+        imageUrl:
+          "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+        width: 1,
+        height: 1,
+        static: true, // weather or not the user can sit on top of this element (is it considered as a collission or not)
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      }
+    );
+
+
+    const mapResponse = await axios.post(
+      `${BACKEND_URL}/api/v1/admin/map`,
+      {
+        thumbnail: "https://thumbnail.com/a.png",
+        dimensions: "100x200",
+        name: "100 person interview room",
+        defaultElements: [],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      }
+    );
+
+    const avatarResponse = await axios.post(
+      `${BACKEND_URL}/api/v1/admin/avatar`,
+      {
+        imageUrl: "",
+        name: "Sam",
+      },{
+        headers:{
+          Authorization:`Bearer ${userToken}`
+        }
+      }
+    );
+    const updateElementResponse = await axios.put(
+      `${BACKEND_URL}/api/v1/admin/element/123`,
+      {
+        imageUrl: ""
+      },{
+        headers:{
+          Authorization:`Bearer ${userToken}`
+        }
+      }
+    );
+
+    expect(elementResponse.statusCode).toBe(403);
+    expect(mapResponse.statusCode).toBe(403);
+    expect(avatarResponse.statusCode).toBe(403);
+    expect(updateElementResponse.statusCode).toBe(403);
+
+
+
+  })
+  test("Admin is  able to hi tthe admin endponits ",async()=>{
+    const elementResponse = await axios.post(
+      `${BACKEND_URL} /api/v1/admin/element`,
+      {
+        imageUrl:
+          "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+        width: 1,
+        height: 1,
+        static: true, // weather or not the user can sit on top of this element (is it considered as a collission or not)
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      }
+    );
+
+
+    const mapResponse = await axios.post(
+      `${BACKEND_URL}/api/v1/admin/map`,
+      {
+        thumbnail: "https://thumbnail.com/a.png",
+        dimensions: "100x200",
+        name: "100 person interview room",
+        defaultElements: [],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      }
+    );
+
+    const avatarResponse = await axios.post(
+      `${BACKEND_URL}/api/v1/admin/avatar`,
+      {
+        imageUrl: "",
+        name: "Sam",
+      },{
+        headers:{
+          Authorization:`Bearer ${adminToken}`
+        }
+      }
+    );
+
+    expect(elementResponse.statusCode).toBe(200);
+    expect(mapResponse.statusCode).toBe(200);
+    expect(avatarResponse.statusCode).toBe(200);
+
+
+
+  })
+
+  test("admin is able to update the imageurl of element ",async()=>{
+    
+    const elementResponse = await axios.post(
+      `${BACKEND_URL} /api/v1/admin/element`,
+      {
+        imageUrl:
+          "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+        width: 1,
+        height: 1,
+        static: true, // weather or not the user can sit on top of this element (is it considered as a collission or not)
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      }
+    );
+
+
+    const updateElementResponse = await axios.put(
+      `${BACKEND_URL}/api/v1/admin/element/${elementResponse.data.id}`,
+      {
+        imageUrl: ""
+      },{
+        headers:{
+          Authorization:`Bearer ${adminToken}`
+        }
+      }
+    );
+    expect(updateElementResponse.statusCode).toBe(200);
+  })
+
+
+
+
+
+
+})
+
+
+
+
+  // ------------------------------ Tests for websockets -------------------------
+
+  
