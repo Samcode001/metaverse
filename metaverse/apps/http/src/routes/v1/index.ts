@@ -77,9 +77,31 @@ router.post("/signin", async (req, res) => {
   }
 });
 
-router.get("/elements", async (req, res) => {});
+router.get("/elements", async (req, res) => {
+  const elements = await client.element.findMany();
 
-router.get("/avatars", async (req, res) => {});
+  res.json({
+    elements: elements.map((elem) => ({
+      id: elem.id,
+      imageUrl: elem.imageUrl,
+      width: elem.width,
+      height: elem.height,
+      static: elem.static,
+    })),
+  });
+});
+
+router.get("/avatars", async (req, res) => {
+  const avatars = await client.avatar.findMany();
+
+  res.json({
+    avatars: avatars.map((elem) => ({
+      id: elem.id,
+      imageUrl: elem.imageUrl,
+      name: elem.name,
+    })),
+  });
+});
 
 router.use("/user", userRouter);
 router.use("/space", spaceRouter);
