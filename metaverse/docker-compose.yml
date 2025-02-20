@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  ws:
+    build: .
+    command: ["npm", "run", "--filter", "dev"]
+    ports:
+      - "3001:3001"
+
+  http:
+    build: .
+    command: ["npm", "run", "--filter", "dev"]
+    ports:
+      - "3000:3000"
+
+  pixi-experience:
+    build: .
+    command: ["npm", "run", "--filter", "dev"]
+    ports:
+      - "5173:5173"
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
