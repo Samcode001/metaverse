@@ -3,7 +3,7 @@
 ## Overview
 Nexus is a real-time, interactive digital space designed for seamless collaboration. It allows users to explore, connect, and engage with others in a shared virtual environment with smooth movement and persistent interactions.
 
-![Nexus Preview](Screenshot-283.png)  
+![Nexus Preview](Screenshot(283).png)
 
 
 ## Features
@@ -22,22 +22,25 @@ Nexus is a real-time, interactive digital space designed for seamless collaborat
 
 ## Setup & Installation
 ### Prerequisites
-- Node.js 
+- Node.js (v18+)
 - Docker & Docker Compose
 - PostgreSQL (or use the provided Docker container)
 
 ### Steps
-1. Clone the repository:
-   cd nexus
-   ```
+1. Clone the repository
+
 2. Install dependencies:
+   ```sh
    pnpm install
    ```
 3. Start the database:
- docker run -p 5432:5432 -e POSTGRES_PASSWORD=mysecret -d postgres
+   ```sh
+  docker run -p 5432:5432 -e POSTGRES_PASSWORD=mysecret -d postgres
    ```
-4. Run the services:
+4. Run the service:
+   ```sh
    pnpm run dev
+   ```
 
 ## Contribution
 Feel free to submit pull requests or open issues for feature suggestions and improvements.
